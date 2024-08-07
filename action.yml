@@ -31,5 +31,5 @@ runs:
   using: 'node20'
   main: 'index.js'
 branding:
-  icon: 'icon.png'
+  icon: 'check-circle'
   color: purple

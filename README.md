@@ -24,11 +24,8 @@ jobs:
   doesqa-test-run:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
       - name: Trigger DoesQA Test Run
-        uses: Does-QA/action@v1.0.0
+        uses: Does-QA/action@v1.0.2
         with:
           key: ${{ secrets.DOESQA_KEY }}
           accountId: ${{ secrets.DOESQA_ACCOUNT_ID }}
