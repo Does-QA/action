@@ -11,11 +11,10 @@ async function run() {
         const withoutAny = core.getInput('withoutAny');
         const values = core.getInput('values') || '{}';
         const wait = core.getInput('wait') === 'true' || true;
-        let timeout = parseInt(core.getInput('timeout') || 1200);
+        let timeout = Math.min(parseInt(core.getInput('timeout') || 1200), 2400);
 
         if(timeout > 1200) {
-            core.info(`Timeout was set to over 1200 (20 minutes), limiting to 20 minutes. Consider splitting runs for faster results.`);
-            timeout = 1200;
+            core.info(`Timeout was set to over 20 minutes. Consider splitting runs for faster results.`);
         }
 
         const params = {
@@ -35,7 +34,8 @@ async function run() {
         const [numericRunId, runId] = postResponse.data.runId;
         const { createdTestsCount, foundFlowsCount } = postResponse.data;
 
-        core.info(`[${runId}] Running ${createdTestsCount} from ${foundFlowsCount}`)
+        core.info(`[${runId}] Running ${createdTestsCount} test${createdTestsCount > 1 ? 's': ''} from ${foundFlowsCount} flow${foundFlowsCount > 1 ? 's' : ''}...`)
+        core.info(`View the report at: https://app.does.qa/app/runs/${numericRunId}`)
 
         if(!wait) {
             core.info(`[${runId}] Skipping waiting for run to complete`);
@@ -45,10 +45,13 @@ async function run() {
         let complete = false;
         const startTime = Date.now();
         const pollingUrl = `https://app.does.qa/api/v2/community/accounts/${accountId}/runs/${numericRunId}/status`;
+
+        await new Promise(resolve => setTimeout(resolve, 60000)); // Wait for 1 minute before polling
+
+        let poll = 0
+
         while (!complete && Date.now() - startTime < timeout * 1000) {
-
-            core.info('Checking run status...');
-
+            poll++
             const pollResponse = await axios.get(pollingUrl, {
                 headers: {
                     'x-api-key': key,
@@ -58,12 +61,28 @@ async function run() {
                 core.setFailed(`Failed to get run status: ${error.message}`);
             });
 
-            if (['passed', 'failed'].includes(pollResponse.data.status)) {
+            if ([
+                'never_run',
+                'ignored',
+                'passed',
+                'passed_with_warning',
+                'failed',
+                'rejected',
+                'terminated'
+            ].includes(pollResponse.data.status)) {
+
                 complete = true;
                 core.info(`Test run ${runId} completed with status: ${pollResponse.data.status}`);
+
+                if(['rejected', 'failed', 'terminated'].includes(pollResponse.data.status)) {
+                    core.setFailed(`Test run ${runId} failed. View the report at: https://app.does.qa/app/runs/${numericRunId}`);
+                }
+
             } else {
-                core.info('Run is not complete. Waiting...');
-                await new Promise(resolve => setTimeout(resolve, 5000)); // Wait for 5 seconds before polling again
+                if(poll % 3 === 0){
+                    core.info(`[${runId}] Still running...`);
+                }
+                await new Promise(resolve => setTimeout(resolve, 20000)); // Wait for 20 seconds before polling again
             }
         }
     } catch (error) {

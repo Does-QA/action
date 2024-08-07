@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Trigger DoesQA Test Run
-        uses: doesqa/action@v1.0.0
+        uses: Does-QA/action@v1.0.0
         with:
           key: ${{ secrets.DOESQA_KEY }}
           accountId: ${{ secrets.DOESQA_ACCOUNT_ID }}
