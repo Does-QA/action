@@ -1,0 +1,32 @@
+name: 'DoesQA GitHub Action'
+description: 'Triggers a test run in DoesQA and waits for it to complete'
+inputs:
+  key:
+    description: 'Your DoesQA CI/CD key'
+    required: true
+  accountId:
+    description: 'Your DoesQA Account ID'
+    required: true
+  label:
+    description: 'Label for the test run'
+  withAll:
+    description: 'Flow Tags to include'
+    required: false
+  withoutAny:
+    description: 'Any Flow Tags to exclude'
+    required: false
+    default: 'wip'
+  values:
+    description: 'Values to pass to the test run'
+    required: false
+  wait:
+    description: 'Wait for the test run to complete'
+    required: false
+    default: 'true'
+  timeout:
+    description: 'Timeout in seconds'
+    required: false
+    default: '1200'
+runs:
+  using: 'node20'
+  main: 'index.js'
