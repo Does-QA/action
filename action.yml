@@ -1,4 +1,4 @@
-name: 'DoesQA'
+name: 'DoesQA Trigger'
 description: 'Triggers a test run in DoesQA and waits for it to complete'
 inputs:
   key:
