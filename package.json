@@ -2,7 +2,7 @@
   "name": "doesqa-github-action",
   "version": "1.0.0",
   "description": "GitHub action for DoesQA",
-  "main": "index.js",
+  "main": ".github/actions/doesqa-action/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

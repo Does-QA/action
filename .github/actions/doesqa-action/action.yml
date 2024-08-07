@@ -1,4 +1,4 @@
-name: 'DoesQA GitHub Action'
+name: 'DoesQA'
 description: 'Triggers a test run in DoesQA and waits for it to complete'
 inputs:
   key:
@@ -30,3 +30,6 @@ inputs:
 runs:
   using: 'node20'
   main: 'index.js'
+branding:
+  icon: 'icon.png'
+  color: purple
