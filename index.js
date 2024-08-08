@@ -63,7 +63,7 @@ async function run() {
                     'x-account': accountId
                 },
                 validateStatus: (status) => {
-                    if(status > 500) {
+                    if(status > 500 || status < 300) {
                         // Ignore
                         return true;
                     }
