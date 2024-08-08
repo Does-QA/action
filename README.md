@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger DoesQA Test Run
-        uses: Does-QA/action@v1.0.2
+        uses: Does-QA/action@v1.0.3
         with:
           key: ${{ secrets.DOESQA_KEY }}
           accountId: ${{ secrets.DOESQA_ACCOUNT_ID }}

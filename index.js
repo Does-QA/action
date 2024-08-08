@@ -37,6 +37,11 @@ async function run() {
         core.info(`[${runId}] Running ${createdTestsCount} test${createdTestsCount > 1 ? 's': ''} from ${foundFlowsCount} flow${foundFlowsCount > 1 ? 's' : ''}...`)
         core.info(`View the report at: https://app.does.qa/app/runs/${numericRunId}`)
 
+        if(createdTestsCount === 0) {
+            core.info(`[${runId}] No tests were created. Check the label and values provided.`);
+            return
+        }
+
         if(!wait) {
             core.info(`[${runId}] Skipping waiting for run to complete`);
             return
@@ -56,10 +61,21 @@ async function run() {
                 headers: {
                     'x-api-key': key,
                     'x-account': accountId
+                },
+                validateStatus: (status) => {
+                    if(status > 500) {
+                        // Ignore
+                        return true;
+                    }
                 }
             }).catch(error => {
                 core.setFailed(`Failed to get run status: ${error.message}`);
             });
+
+            if(!pollResponse || !pollResponse.data || !pollResponse.data.status) {
+                await new Promise(resolve => setTimeout(resolve, 20000));
+                continue
+            }
 
             if ([
                 'never_run',
