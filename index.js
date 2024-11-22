@@ -11,6 +11,8 @@ async function run() {
         const withoutAny = core.getInput('withoutAny');
         const values = core.getInput('values') || '{}';
         const wait = core.getInput('wait') === 'true' || true;
+        const concurrency = Math.max(parseInt(core.getInput('concurrency') || 1), 0);
+        const recipe = core.getInput('recipe') || undefined;
         let timeout = Math.min(parseInt(core.getInput('timeout') || 1200), 2400);
 
         if(timeout > 1200) {
@@ -21,14 +23,22 @@ async function run() {
             label,
             key,
             withAll,
-            withoutAny
+            withoutAny,
+            recipe
         };
+
+        const headers = {}
+
+        if(concurrency > 0) {
+            headers['dqa-account.maxConcurrency'] = concurrency;
+        }
 
         const postUrl = `https://app.does.qa/api/hook/${accountId}`;
         const postResponse = await axios.post(postUrl, {
             ...JSON.parse(values),
         }, {
-            params
+            params,
+            headers
         });
 
         const [numericRunId, runId] = postResponse.data.runId;
