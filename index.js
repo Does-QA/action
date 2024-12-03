@@ -13,6 +13,7 @@ async function run() {
         const wait = core.getInput('wait') === 'true' || true;
         const concurrency = Math.max(parseInt(core.getInput('concurrency') || 1), 0);
         const recipe = core.getInput('recipe') || undefined;
+        const testsTagged = core.getInput('testsTagged') || undefined;
         let timeout = Math.min(parseInt(core.getInput('timeout') || 1200), 2400);
 
         if(timeout > 1200) {
@@ -24,7 +25,8 @@ async function run() {
             key,
             withAll,
             withoutAny,
-            recipe
+            recipe,
+            testsTagged
         };
 
         const headers = {}

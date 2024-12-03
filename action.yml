@@ -27,6 +27,17 @@ inputs:
     description: 'Timeout in seconds'
     required: false
     default: '1200'
+  concurrency:
+    description: 'Number of concurrent test runs'
+    required: false
+    default: '0'
+  recipe:
+    description: 'Recipe to use for the test run'
+    required: false
+  testsTagged:
+    description: 'Tests tagged with this tag will be run'
+    required: false
+
 runs:
   using: 'node20'
   main: 'index.js'

@@ -14,6 +14,7 @@ This GitHub Action triggers a test run in DoesQA and waits for it to complete.
 - `timeout` (optional, default: `1200`): Timeout in seconds.
 - `concurrency` (optional, default: Account Concurrency): Number of concurrent test to run.
 - `recipe` (optional): Recipe to use for the test run. (ID)
+- `testsTagged` (optional): Run only tests tagged with the specified tag within the filtered flows.
 
 ## Example Usage
 
@@ -27,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger DoesQA Test Run
-        uses: Does-QA/action@v1.0.5
+        uses: Does-QA/action@v1.0.7
         with:
           key: ${{ secrets.DOESQA_KEY }}
           accountId: ${{ secrets.DOESQA_ACCOUNT_ID }}
@@ -39,6 +40,7 @@ jobs:
           timeout: '1800'
           concurrency: 20
           recipe: '4sJz2'
+          testsTagged: 'priority'
 ```
 
 ## Outputs
