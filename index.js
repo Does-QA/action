@@ -36,12 +36,32 @@ async function run() {
         }
 
         const postUrl = `https://app.does.qa/api/hook/${accountId}`;
-        const postResponse = await axios.post(postUrl, {
-            ...JSON.parse(values),
-        }, {
-            params,
-            headers
-        });
+        let postResponse
+
+        for(let tryCount = 0; tryCount < 3; tryCount++) {
+            try {
+                postResponse = await axios.post(postUrl, {
+                    ...JSON.parse(values),
+                }, {
+                    params,
+                    headers,
+                    validateStatus: (status) => {
+                        if(status > 500 || status < 300) {
+                            // Retry the call if it fails
+                            return false;
+                        }
+                        return true;
+                    }
+                });
+                break;
+            } catch (error) {
+                await new Promise(resolve => setTimeout(resolve, 20000));
+                if (tryCount === 2) {
+                    core.setFailed(`Failed to send request after 3 attempts: ${error.message}`);
+                    return;
+                }
+            }
+        }
 
         const [numericRunId, runId] = postResponse.data.runId;
         const { createdTestsCount, foundFlowsCount } = postResponse.data;

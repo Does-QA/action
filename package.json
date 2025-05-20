@@ -1,6 +1,6 @@
 {
   "name": "doesqa-github-action",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "GitHub action for DoesQA",
   "main": "index.js",
   "scripts": {
