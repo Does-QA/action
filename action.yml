@@ -37,10 +37,20 @@ inputs:
   testsTagged:
     description: 'Tests tagged with this tag will be run'
     required: false
+  github-token:
+    description: 'GitHub token for creating a Check Run on the commit. Defaults to the automatic workflow token.'
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  status:
+    description: 'Final status of the DoesQA test run (e.g. passed, failed, terminated)'
+  report-url:
+    description: 'URL to the DoesQA report for this run'
 
 runs:
   using: 'node20'
-  main: 'index.js'
+  main: 'dist/index.js'
 branding:
   icon: 'check-circle'
   color: purple

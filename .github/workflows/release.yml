@@ -1,0 +1,101 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: "!startsWith(github.event.head_commit.message, 'release:')"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Bump version
+        id: version
+        run: |
+          CURRENT=$(node -p "require('./package.json').version")
+          LATEST_TAG=$(git tag -l 'v*' --sort=-v:refname | head -n1 || echo "")
+
+          if [ -z "$LATEST_TAG" ]; then
+            # No tags yet — use current package.json version as-is
+            NEW_VERSION="$CURRENT"
+          else
+            TAGGED_VERSION="${LATEST_TAG#v}"
+
+            CURRENT_MAJOR=$(echo "$CURRENT" | cut -d. -f1)
+            CURRENT_MINOR=$(echo "$CURRENT" | cut -d. -f2)
+            TAGGED_MAJOR=$(echo "$TAGGED_VERSION" | cut -d. -f1)
+            TAGGED_MINOR=$(echo "$TAGGED_VERSION" | cut -d. -f2)
+            TAGGED_PATCH=$(echo "$TAGGED_VERSION" | cut -d. -f3)
+
+            if [ "$CURRENT_MAJOR" -gt "$TAGGED_MAJOR" ] || [ "$CURRENT_MINOR" -gt "$TAGGED_MINOR" ]; then
+              # Major or minor was manually bumped in package.json — respect it, reset patch to 0
+              NEW_VERSION="${CURRENT_MAJOR}.${CURRENT_MINOR}.0"
+            else
+              # Auto-bump patch
+              NEW_PATCH=$((TAGGED_PATCH + 1))
+              NEW_VERSION="${TAGGED_MAJOR}.${TAGGED_MINOR}.${NEW_PATCH}"
+            fi
+          fi
+
+          echo "version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Releasing v$NEW_VERSION"
+
+          # Write the new version back to package.json
+          node -e "const p=require('./package.json'); p.version='$NEW_VERSION'; require('fs').writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n')"
+
+      - name: Build
+        run: npm run build
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dist/ package.json
+          git commit -m "release: v${{ steps.version.outputs.version }}"
+          git push
+
+      - name: Create tag
+        run: |
+          VERSION="v${{ steps.version.outputs.version }}"
+          git tag "$VERSION"
+          git push origin "$VERSION"
+
+      - name: Update major version tag
+        run: |
+          MAJOR="v$(echo "${{ steps.version.outputs.version }}" | cut -d. -f1)"
+          git tag -f "$MAJOR"
+          git push origin "$MAJOR" --force
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="v${{ steps.version.outputs.version }}"
+          PREVIOUS=$(git tag -l 'v*.*.*' --sort=-v:refname | sed -n '2p' || echo "")
+
+          if [ -n "$PREVIOUS" ]; then
+            NOTES=$(git log "$PREVIOUS".."$VERSION" --pretty=format:"- %s" --no-merges -- . ':!dist/' | grep -v "^- release:" || echo "- Patch release")
+          else
+            NOTES="- Initial release"
+          fi
+
+          gh release create "$VERSION" \
+            --title "$VERSION" \
+            --notes "$NOTES" \
+            --latest
