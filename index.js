@@ -65,6 +65,28 @@ function buildSummaryMarkdown({ status, reportUrl, createdTestsCount, foundFlows
     ].join('\n');
 }
 
+function buildTriggeredMarkdown({ reportUrl, runId, label }) {
+    const rows = [
+        ['Status', '\uD83D\uDE80 **Triggered**'],
+        ['Run ID', `\`${runId}\``],
+    ];
+    if (label) rows.push(['Label', label]);
+
+    const table = rows.map(([k, v]) => `| ${k} | ${v} |`).join('\n');
+
+    return [
+        '### \uD83D\uDE80 DoesQA Test Run \u2014 Triggered',
+        '',
+        'Tests have been triggered and are running in DoesQA. This action was configured not to wait for results.',
+        '',
+        '| | |',
+        '|---|---|',
+        table,
+        '',
+        `[View results on DoesQA](${reportUrl})`,
+    ].join('\n');
+}
+
 async function writeSummary(md) {
     await core.summary.addRaw(md).write();
 }
@@ -191,15 +213,19 @@ async function run() {
             return;
         }
 
-        const inProgressMd = buildSummaryMarkdown({ ...runMeta, status: 'running' });
-        checkRunId = await createCheckRun(githubToken, { summary: inProgressMd, reportUrl, startedAt });
-
         if (!wait) {
             core.info(`[${runId}] Skipping waiting for run to complete`);
-            await writeSummary(inProgressMd);
-            core.setOutput('status', 'running');
+            const triggeredMd = buildTriggeredMarkdown({ reportUrl, runId, label });
+            await writeSummary(triggeredMd);
+
+            checkRunId = await createCheckRun(githubToken, { summary: triggeredMd, reportUrl, startedAt });
+            await completeCheckRun(githubToken, checkRunId, { status: 'ignored', summary: triggeredMd, reportUrl });
+            core.setOutput('status', 'triggered');
             return;
         }
+
+        const inProgressMd = buildSummaryMarkdown({ ...runMeta, status: 'running' });
+        checkRunId = await createCheckRun(githubToken, { summary: inProgressMd, reportUrl, startedAt });
 
         let complete = false;
         const startTime = Date.now();
