@@ -38345,15 +38345,15 @@ function checkConclusion(status) {
   if (["never_run", "ignored"].includes(status)) return "skipped";
   return "cancelled";
 }
-function buildSummaryMarkdown({ status, reportUrl, createdTestsCount, foundFlowsCount, runId, label, elapsed }) {
+function buildSummaryMarkdown({ status, reportUrl, createdTestsCount, flowCount, runId, label, elapsed }) {
   const emoji = statusEmoji(status);
   const heading = `${emoji} DoesQA Test Run \u2014 ${statusLabel(status)}`;
   const rows = [
     ["Status", `${emoji} **${statusLabel(status)}**`],
     ["Tests", `${createdTestsCount}`],
-    ["Flows", `${foundFlowsCount}`],
     ["Run ID", `\`${runId}\``]
   ];
+  if (flowCount) rows.splice(2, 0, ["Flows", `${flowCount}`]);
   if (label) rows.push(["Label", label]);
   if (elapsed != null) rows.push(["Duration", `${Math.round(elapsed / 1e3)}s`]);
   const table = rows.map(([k, v]) => `| ${k} | ${v} |`).join("\n");
@@ -38474,13 +38474,14 @@ async function run() {
       }
     }
     const [numericRunId, runId] = postResponse.data.runId;
-    const { createdTestsCount, foundFlowsCount } = postResponse.data;
+    const createdTestsCount = postResponse.data.createdTestsCount ?? 0;
+    const flowCount = postResponse.data.flowCount ?? 0;
     const reportUrl = buildReportUrl(numericRunId);
     const startedAt = (/* @__PURE__ */ new Date()).toISOString();
     setOutput("report-url", reportUrl);
-    info(`[${runId}] Running ${createdTestsCount} test${createdTestsCount > 1 ? "s" : ""} from ${foundFlowsCount} flow${foundFlowsCount > 1 ? "s" : ""}...`);
+    info(`[${runId}] Running ${createdTestsCount} test${createdTestsCount > 1 ? "s" : ""} from ${flowCount} flow${flowCount > 1 ? "s" : ""}...`);
     info(`View the report at: ${reportUrl}`);
-    const runMeta = { createdTestsCount, foundFlowsCount, runId, label, reportUrl };
+    const runMeta = { createdTestsCount, flowCount, runId, label, reportUrl };
     if (createdTestsCount === 0) {
       info(`[${runId}] No tests were created. Check the label and values provided.`);
       const md = buildSummaryMarkdown({ ...runMeta, status: "never_run" });
